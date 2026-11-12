@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kitchensum-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: kitchensum-api
+  template:
+    metadata:
+      labels:
+        app: kitchensum-api
+    spec:
+      serviceAccountName: kitchensum-scaler
+      containers:
+        - name: api
+          image: kitchensum-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: ENABLE_SCALING
+              value: "false"
+            - name: MODEL_PATH
+              value: /app/model.joblib
+          readinessProbe:
+            httpGet: {path: /health, port: 8000}
+            initialDelaySeconds: 5
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kitchensum-api
+spec:
+  selector: {app: kitchensum-api}
+  ports:
+    - port: 8000
+      targetPort: 8000
+  type: ClusterIP

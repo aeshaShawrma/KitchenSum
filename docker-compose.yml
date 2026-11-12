@@ -1,0 +1,23 @@
+services:
+  mongo:
+    image: mongo:7
+    volumes: [mongo_data:/data/db]
+    ports: ["127.0.0.1:27017:27017"]
+  api:
+    build: ./backend
+    environment:
+      MONGO_URI: mongodb://mongo:27017
+      MODEL_PATH: /app/model.joblib
+      ENABLE_SCALING: "false"
+    ports: ["8000:8000"]
+    depends_on: [mongo]
+  frontend:
+    build: ./frontend
+    ports: ["5173:80"]
+    depends_on: [api]
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    volumes: ["./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro"]
+    ports: ["9090:9090"]
+volumes:
+  mongo_data:
